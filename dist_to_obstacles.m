@@ -1,8 +1,5 @@
 function d = dist_to_obstacles(P, env)
-% Distanza minima dei punti P (N x 2) dagli ostacoli dell'ambiente env.
-% Vale 0 per i punti interni a un ostacolo.
-%   env.circ : M x 3, righe [cx cy r]
-%   env.poly : cell array, ogni cella e' una matrice K x 2 di vertici
+% Distanza minima dei punti P (N x 2) dagli ostacoli, 0 se il punto e' dentro
 d = inf(size(P, 1), 1);
 
 for i = 1:size(env.circ, 1)

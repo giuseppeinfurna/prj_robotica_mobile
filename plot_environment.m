@@ -1,5 +1,5 @@
 function plot_environment(ax, env, robot)
-% Disegna ambiente, ostacoli, configurazione iniziale e finale.
+% Disegna ostacoli, configurazione iniziale (verde) e finale (rosso)
 axes(ax); hold(ax, 'on'); axis(ax, 'equal');
 xlim(ax, env.xlim); ylim(ax, env.ylim);
 grid(ax, 'on'); box(ax, 'on');

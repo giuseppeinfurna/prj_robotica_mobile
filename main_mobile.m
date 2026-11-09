@@ -1,7 +1,5 @@
-%% PROGETTO: Pianificazione e controllo di un robot mobile differenziale
-% Script principale: modello, ambiente con ostacoli, pianificazione con
-% cell decomposition + retraction (Dijkstra), controllo cinematico in
-% coordinate polari, simulazione, grafici, animazione e salvataggio output.
+%% Robot mobile differenziale: pianificazione e controllo
+% Cell decomposition + retraction con Dijkstra, poi controllo in coordinate polari
 clear; clc; close all;
 
 %% Parametri del robot e del controllo
@@ -20,7 +18,7 @@ ctrl.dt        = 0.01;    % passo di integrazione [s]
 ctrl.Tmax      = 120;     % tempo massimo di simulazione [s]
 
 h = 0.1;                  % lato delle celle [m]
-salva_gif = true;         % salva anche l'animazione in results/animazione.gif
+salva_gif = true;         % salva anche results/animazione.gif
 
 if ~exist('results', 'dir'), mkdir('results'); end
 
@@ -30,9 +28,9 @@ v_t = 0.4;  w_t = -0.8;
 [v_c, w_c] = vw_from_wheels(wR_t, wL_t, robot);
 fprintf('Modello: v = %.2f m/s, w = %.2f rad/s -> wR = %.3f, wL = %.3f rad/s\n', v_t, w_t, wR_t, wL_t);
 assert(abs(v_c - v_t) < 1e-12 && abs(w_c - w_t) < 1e-12, 'Cinematica diretta e inversa non coerenti');
-[wR_t, wL_t] = wheels_from_vw(1, 0, robot);            % rettilineo: ruote uguali
+[wR_t, wL_t] = wheels_from_vw(1, 0, robot);            % rettilineo
 assert(abs(wR_t - wL_t) < 1e-12, 'In moto rettilineo le ruote devono avere la stessa velocita''');
-[wR_t, wL_t] = wheels_from_vw(0, 1, robot);            % rotazione sul posto: ruote opposte
+[wR_t, wL_t] = wheels_from_vw(0, 1, robot);            % rotazione sul posto
 assert(abs(wR_t + wL_t) < 1e-12, 'In rotazione sul posto le ruote devono essere opposte');
 disp('Test del modello superati.');
 fprintf('\n');
@@ -56,7 +54,7 @@ d_retta = norm(env.qf(1:2) - env.q0(1:2));
 fprintf('Waypoint: %d, lunghezza del percorso: %.2f m\n', size(wp, 1), plan.length);
 fprintf('Distanza in linea retta q0-qf: %.2f m (rapporto percorso/retta: %.2f)\n\n', d_retta, plan.length / d_retta);
 
-% il percorso pianificato deve essere collision-free (robot compreso)
+% controllo che il percorso sia libero da collisioni anche con il robot
 seg = [];
 for i = 1:size(wp, 1) - 1
     s = linspace(0, 1, max(2, ceil(norm(wp(i+1, :) - wp(i, :)) / 0.02)))';
@@ -85,7 +83,7 @@ t = sim.t;  q = sim.q;
 fprintf('Simulazione terminata in %.2f s\n', t(end));
 
 %% 5) Analisi dei risultati
-% errore di tracking: distanza dal percorso pianificato (poligonale dei waypoint)
+% errore di tracking = distanza dalla poligonale dei waypoint
 e_cross = inf(1, numel(t));
 for i = 1:size(wp, 1) - 1
     e_cross = min(e_cross, point_segment_dist(q(1:2, :)', wp(i, :), wp(i+1, :))');

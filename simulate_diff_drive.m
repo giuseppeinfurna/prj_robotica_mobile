@@ -1,11 +1,7 @@
 function sim = simulate_diff_drive(q0, wp, theta_f, robot, ctrl)
-% Simulazione del robot differenziale con controllore cinematico a coordinate polari
-%   rho   = distanza dal waypoint corrente
-%   alpha = errore di direzione rispetto al waypoint
-%   v = k_rho * rho * cos(alpha)   (v = 0 se |alpha| > pi/2: il robot ruota sul posto)
-%   w = k_alpha * alpha
-% Fase 1: inseguimento dei waypoint. Fase 2: allineamento all'orientamento finale.
-% (v, w) -> (wR, wL) con saturazione delle ruote; integrazione con Runge-Kutta 4.
+% Controllo in coordinate polari: rho = distanza dal waypoint, alpha = errore di direzione
+%   v = k_rho * rho * cos(alpha) (0 se |alpha| > pi/2),  w = k_alpha * alpha
+% Fase 1: waypoint, fase 2: allineamento finale. Ruote saturate, integrazione RK4.
 
 dt  = ctrl.dt;
 Nmax = ceil(ctrl.Tmax / dt);
@@ -70,7 +66,7 @@ if ~done
     error('simulate_diff_drive:Timeout', 'Il robot non ha raggiunto la configurazione finale entro Tmax.');
 end
 
-% Ultimo campione: stato finale con ingressi nulli
+% ultimo campione con ingressi nulli
 t(n + 1) = n * dt;
 sim.t = t(1:n + 1);
 sim.q = Q(:, 1:n + 1);

@@ -1,12 +1,6 @@
 function plan = plan_cell_retraction(env, robot, h)
-% Pianificazione con cell decomposition e retraction.
-%   1) decomposizione in celle quadrate di lato h, libere o occupate
-%      (ostacoli ingranditi del raggio del robot piu' un margine);
-%   2) grafo di adiacenza delle celle libere (8-connesso);
-%   3) retraction: ogni cella libera viene riportata sulla "dorsale" della
-%      mappa di clearance (luogo dei punti piu' lontani dagli ostacoli);
-%   4) Dijkstra sul grafo ridotto alla dorsale.
-% Output: struttura plan con griglia, clearance, dorsale, grafo e waypoint.
+% Cell decomposition con celle di lato h (ostacoli ingranditi di rb + margine),
+% retraction sulla dorsale della mappa di clearance e Dijkstra sulla dorsale.
 
 infl = robot.rb + robot.margin;
 nx = round((env.xlim(2) - env.xlim(1)) / h);
@@ -72,7 +66,7 @@ pts = [X(cells), Y(cells)];
 raw = [env.q0(1:2)'; pts; env.qf(1:2)'];
 raw = raw([true; any(diff(raw) ~= 0, 2)], :);
 
-%% 5) Waypoint essenziali (si eliminano i punti allineati se il tratto e' libero)
+%% 5) Waypoint essenziali
 idx = rdp(raw, 1, size(raw, 1), 1.5 * h, env, robot.rb + 0.5 * robot.margin, h);
 wp = raw(idx, :);
 
@@ -88,7 +82,7 @@ plan.n_ridge = nnz(ridge);
 plan.length = sum(hypot(diff(wp(:, 1)), diff(wp(:, 2))));
 end
 
-%% ---------------------------------------------------------------
+%% Funzioni locali
 function k = point_to_cell(p, env, h, nx, ny)
 col = min(max(floor((p(1) - env.xlim(1)) / h) + 1, 1), nx);
 row = min(max(floor((p(2) - env.ylim(1)) / h) + 1, 1), ny);
@@ -96,7 +90,7 @@ k = row + (col - 1) * ny;
 end
 
 function A = build_adjacency(free, h)
-% Matrice sparsa simmetrica: A(i,j) = distanza tra i centri se le celle sono adiacenti.
+% A(i,j) = distanza tra i centri se le celle sono adiacenti
 [ny, nx] = size(free);
 [R, Cc] = ndgrid(1:ny, 1:nx);
 ii = [];  jj = [];  ww = [];
@@ -121,7 +115,7 @@ A = sparse(ii, jj, ww, ny * nx, ny * nx);
 end
 
 function path = retract(k, C, free, ridge, nx, ny)
-% Salita a gradiente sulla clearance fino alla dorsale (mappa di retraction).
+% Sale lungo il gradiente della clearance fino alla dorsale
 path = k;
 for it = 1:nx * ny
     if ridge(k), return; end
@@ -144,7 +138,7 @@ end
 end
 
 function path = dijkstra_sparse(W, s, t)
-% Dijkstra con pesi non negativi su matrice sparsa simmetrica W.
+% Dijkstra su matrice sparsa W
 n = size(W, 1);
 dist = inf(n, 1);  prev = zeros(n, 1);  done = false(n, 1);
 dist(s) = 0;
@@ -173,8 +167,7 @@ end
 end
 
 function idx = rdp(P, i, j, tol, env, dmin, h)
-% Ramer-Douglas-Peucker: un punto viene eliminato solo se resta entro tol
-% dal segmento e il segmento stesso e' collision-free.
+% Ramer-Douglas-Peucker: elimina un punto solo se il segmento che lo sostituisce e' libero
 if j <= i + 1
     idx = [i j];
     return;

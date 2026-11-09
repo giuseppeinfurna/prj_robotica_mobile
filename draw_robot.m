@@ -1,6 +1,5 @@
 function hnd = draw_robot(ax, q, robot, hnd)
-% Disegna il robot differenziale (corpo circolare, direzione, due ruote).
-% Alla prima chiamata crea gli oggetti grafici, poi li aggiorna.
+% Disegna il robot (corpo, direzione, ruote); se hnd e' dato aggiorna i grafici esistenti
 th = linspace(0, 2*pi, 40);
 body = [robot.rb * cos(th); robot.rb * sin(th)];
 head = [0 robot.rb; 0 0];
