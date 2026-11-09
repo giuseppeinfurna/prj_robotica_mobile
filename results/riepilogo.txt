@@ -1,0 +1,12 @@
+Celle libere: 7127
+Celle occupate: 2873
+Archi del grafo: 27090
+Celle sulla dorsale: 931
+Waypoint: 11
+Lunghezza percorso pianificato: 14.042 m
+Tempo di simulazione: 21.90 s
+Errore finale posizione: 0.0298 m
+Errore finale orientamento: 0.0190 rad
+Errore di tracking max/medio: 0.146 / 0.031 m
+Distanza minima dagli ostacoli: 0.549 m
+Velocita' massime: v = 0.750 m/s, |w| = 2.365 rad/s, |wheel| = 15.00 rad/s
