@@ -52,7 +52,9 @@ plan = plan_cell_retraction(env, robot, h);
 wp = plan.waypoints;
 fprintf('Celle libere: %d, occupate: %d, archi del grafo: %d\n', plan.n_free, plan.n_occ, plan.n_edges);
 fprintf('Celle sulla dorsale (retraction): %d\n', plan.n_ridge);
-fprintf('Waypoint: %d, lunghezza del percorso: %.2f m\n\n', size(wp, 1), plan.length);
+d_retta = norm(env.qf(1:2) - env.q0(1:2));
+fprintf('Waypoint: %d, lunghezza del percorso: %.2f m\n', size(wp, 1), plan.length);
+fprintf('Distanza in linea retta q0-qf: %.2f m (rapporto percorso/retta: %.2f)\n\n', d_retta, plan.length / d_retta);
 
 % il percorso pianificato deve essere collision-free (robot compreso)
 seg = [];
@@ -107,6 +109,7 @@ fid = fopen(fullfile('results', 'riepilogo.txt'), 'w');
 fprintf(fid, 'Celle libere: %d\nCelle occupate: %d\nArchi del grafo: %d\nCelle sulla dorsale: %d\n', ...
     plan.n_free, plan.n_occ, plan.n_edges, plan.n_ridge);
 fprintf(fid, 'Waypoint: %d\nLunghezza percorso pianificato: %.3f m\n', size(wp, 1), plan.length);
+fprintf(fid, 'Distanza in linea retta q0-qf: %.3f m\nRapporto percorso/retta: %.3f\n', d_retta, plan.length / d_retta);
 fprintf(fid, 'Tempo di simulazione: %.2f s\n', t(end));
 fprintf(fid, 'Errore finale posizione: %.4f m\nErrore finale orientamento: %.4f rad\n', e_pos(end), e_th(end));
 fprintf(fid, 'Errore di tracking max/medio: %.3f / %.3f m\n', max(e_cross), mean(e_cross));
