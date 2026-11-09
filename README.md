@@ -58,7 +58,7 @@ Il modello usato dal controllore coincide con quello simulato: non ci sono slitt
 
 ## Output generati
 
-Ogni esecuzione scrive in `results/` i file seguenti. Le immagini sono incluse qui sotto, ma compaiono solo dopo la prima esecuzione.
+Ogni esecuzione scrive in `results/` i file seguenti.
 
 | File | Contenuto |
 |---|---|
@@ -84,7 +84,13 @@ Ogni esecuzione scrive in `results/` i file seguenti. Le immagini sono incluse q
 
 ## Analisi dei risultati
 
-Dopo l'esecuzione, i valori in `results/riepilogo.txt` vanno riportati qui. Si commentano in particolare: lunghezza del percorso rispetto alla distanza in linea retta, errore di tracking massimo (atteso nelle curve, dove il robot taglia i waypoint entro la tolleranza di 0.3 m), distanza minima dagli ostacoli, e tratti in cui le ruote saturano.
+Il codice è stato eseguito in MATLAB e tutti i controlli automatici sono stati superati. Con `v = 0.40 m/s` e `w = -0.80 rad/s` il modello dà `wR = 5.600 rad/s` e `wL = 10.400 rad/s`.
+
+La decomposizione produce 7127 celle libere e 2873 occupate, con 27090 archi nel grafo di adiacenza. La dorsale di retraction contiene 931 celle. Dijkstra trova un percorso di 11 waypoint lungo 14.04 m, contro 11.31 m in linea retta tra partenza e arrivo (rapporto 1.24, valore stampato da `main_mobile` e salvato in `riepilogo.txt`): il percorso è più lungo perché passa sotto la parete e lontano dagli ostacoli. La distanza minima dagli ostacoli lungo il percorso pianificato è 0.570 m.
+
+Il robot raggiunge la configurazione finale in 21.90 s con errore di posizione 0.0298 m (tolleranza 0.03 m) e di orientamento 0.0190 rad (tolleranza 0.02 rad). L'errore di tracking, cioè la distanza dal percorso pianificato, è al massimo 0.146 m e in media 0.031 m: il massimo si ha nelle curve, dove il robot taglia i waypoint entro la tolleranza di 0.3 m. La traiettoria eseguita resta a 0.549 m dagli ostacoli, ben oltre il raggio del robot (0.20 m).
+
+Le ruote saturano a 15 rad/s: la velocità lineare massima è 0.750 m/s, mentre la velocità angolare massima del robot è 2.365 rad/s.
 
 ## Limiti
 
