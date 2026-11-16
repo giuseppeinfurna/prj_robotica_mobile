@@ -147,12 +147,12 @@ for it = 1:n
     [dmin, u] = min(tmp);
     if isinf(dmin) || u == t, break; end
     done(u) = true;
-    [nb, ~, w] = find(W(:, u));
-    for q = 1:numel(nb)
-        v = nb(q);
-        if ~done(v) && dist(u) + w(q) < dist(v)
-            dist(v) = dist(u) + w(q);
-            prev(v) = u;
+    [nb, ~, peso] = find(W(:, u));
+    for j = 1:numel(nb)
+        nj = nb(j);
+        if ~done(nj) && dist(u) + peso(j) < dist(nj)
+            dist(nj) = dist(u) + peso(j);
+            prev(nj) = u;
         end
     end
 end

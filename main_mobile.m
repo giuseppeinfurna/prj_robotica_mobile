@@ -1,20 +1,21 @@
 %% Robot mobile differenziale: pianificazione e controllo
-% Cell decomposition + retraction con Dijkstra, poi controllo in coordinate polari
+% Cell decomposition + retraction con Dijkstra, controllo in coordinate polari
+% e simulazione con Eulero esplicito
 clear; clc; close all;
 
 %% Parametri del robot e del controllo
-robot.rw     = 0.05;      % raggio delle ruote [m]
-robot.d      = 0.30;      % interasse [m]
-robot.rb     = 0.20;      % raggio del corpo [m]
-robot.margin = 0.15;      % margine di sicurezza [m]
-robot.wmax   = 15;        % velocita' massima delle ruote [rad/s]
+robot.r         = 0.05;   % raggio delle ruote r [m]
+robot.d         = 0.30;   % interasse d [m]
+robot.rb        = 0.20;   % raggio del corpo [m]
+robot.margin    = 0.15;   % margine di sicurezza [m]
+robot.omega_max = 15;     % velocita' angolare massima delle ruote [rad/s]
 
 ctrl.k_rho     = 1.5;     % guadagno su rho   (k_rho > 0)
 ctrl.k_alpha   = 4.0;     % guadagno su alpha (k_alpha > k_rho)
 ctrl.tol_wp    = 0.30;    % tolleranza sui waypoint intermedi [m]
 ctrl.tol_final = 0.03;    % tolleranza sul waypoint finale [m]
 ctrl.tol_theta = 0.02;    % tolleranza sull'orientamento finale [rad]
-ctrl.dt        = 0.01;    % passo di integrazione [s]
+ctrl.dt        = 0.01;    % passo di integrazione di Eulero [s]
 ctrl.Tmax      = 120;     % tempo massimo di simulazione [s]
 
 h = 0.1;                  % lato delle celle [m]
@@ -22,16 +23,17 @@ salva_gif = true;         % salva anche results/animazione.gif
 
 if ~exist('results', 'dir'), mkdir('results'); end
 
-%% 1) Modello differenziale: verifica di (wR, wL) <-> (v, w)
-v_t = 0.4;  w_t = -0.8;
-[wR_t, wL_t] = wheels_from_vw(v_t, w_t, robot);
-[v_c, w_c] = vw_from_wheels(wR_t, wL_t, robot);
-fprintf('Modello: v = %.2f m/s, w = %.2f rad/s -> wR = %.3f, wL = %.3f rad/s\n', v_t, w_t, wR_t, wL_t);
-assert(abs(v_c - v_t) < 1e-12 && abs(w_c - w_t) < 1e-12, 'Cinematica diretta e inversa non coerenti');
-[wR_t, wL_t] = wheels_from_vw(1, 0, robot);            % rettilineo
-assert(abs(wR_t - wL_t) < 1e-12, 'In moto rettilineo le ruote devono avere la stessa velocita''');
-[wR_t, wL_t] = wheels_from_vw(0, 1, robot);            % rotazione sul posto
-assert(abs(wR_t + wL_t) < 1e-12, 'In rotazione sul posto le ruote devono essere opposte');
+%% 1) Modello differenziale: verifica di (omega_R, omega_L) <-> (v, omega)
+v_t = 0.4;  omega_t = -0.8;
+[omega_R_t, omega_L_t] = wheels_from_vw(v_t, omega_t, robot);
+[v_c, omega_c] = vw_from_wheels(omega_R_t, omega_L_t, robot);
+fprintf('Modello: v = %.2f m/s, omega = %.2f rad/s -> omega_R = %.3f, omega_L = %.3f rad/s\n', ...
+    v_t, omega_t, omega_R_t, omega_L_t);
+assert(abs(v_c - v_t) < 1e-12 && abs(omega_c - omega_t) < 1e-12, 'Cinematica diretta e inversa non coerenti');
+[omega_R_t, omega_L_t] = wheels_from_vw(1, 0, robot);  % rettilineo
+assert(abs(omega_R_t - omega_L_t) < 1e-12, 'In moto rettilineo le ruote devono avere la stessa velocita''');
+[omega_R_t, omega_L_t] = wheels_from_vw(0, 1, robot);  % rotazione sul posto
+assert(abs(omega_R_t + omega_L_t) < 1e-12, 'In rotazione sul posto le ruote devono essere opposte');
 disp('Test del modello superati.');
 fprintf('\n');
 
@@ -96,8 +98,8 @@ fprintf('Errore finale di posizione:    %.4f m\n', e_pos(end));
 fprintf('Errore finale di orientamento: %.4f rad\n', e_th(end));
 fprintf('Errore di tracking massimo / medio (distanza dal percorso): %.3f / %.3f m\n', max(e_cross), mean(e_cross));
 fprintf('Distanza minima dagli ostacoli (traiettoria eseguita): %.3f m (raggio robot %.2f m)\n', dmin_exec, robot.rb);
-fprintf('Velocita'' massime: v = %.3f m/s, |w| = %.3f rad/s, |wheel| = %.2f rad/s\n', ...
-    max(abs(sim.v)), max(abs(sim.w)), max(abs([sim.wR, sim.wL])));
+fprintf('Velocita'' massime: v = %.3f m/s, |omega| = %.3f rad/s, |omega_R|, |omega_L| = %.2f rad/s\n', ...
+    max(abs(sim.v)), max(abs(sim.omega)), max(abs([sim.omega_R, sim.omega_L])));
 
 assert(e_pos(end) < ctrl.tol_final + 1e-6, 'Posizione finale fuori tolleranza');
 assert(e_th(end) < ctrl.tol_theta + 1e-6, 'Orientamento finale fuori tolleranza');
@@ -112,8 +114,8 @@ fprintf(fid, 'Tempo di simulazione: %.2f s\n', t(end));
 fprintf(fid, 'Errore finale posizione: %.4f m\nErrore finale orientamento: %.4f rad\n', e_pos(end), e_th(end));
 fprintf(fid, 'Errore di tracking max/medio: %.3f / %.3f m\n', max(e_cross), mean(e_cross));
 fprintf(fid, 'Distanza minima dagli ostacoli: %.3f m\n', dmin_exec);
-fprintf(fid, 'Velocita'' massime: v = %.3f m/s, |w| = %.3f rad/s, |wheel| = %.2f rad/s\n', ...
-    max(abs(sim.v)), max(abs(sim.w)), max(abs([sim.wR, sim.wL])));
+fprintf(fid, 'Velocita'' massime: v = %.3f m/s, |omega| = %.3f rad/s, |omega_R|, |omega_L| = %.2f rad/s\n', ...
+    max(abs(sim.v)), max(abs(sim.omega)), max(abs([sim.omega_R, sim.omega_L])));
 fclose(fid);
 
 %% 6) Grafici
@@ -137,12 +139,12 @@ xlabel('t [s]'); ylabel('\alpha [deg]'); title('Errore di direzione');
 
 figure('Name', 'Velocita'' delle ruote');
 subplot(2, 1, 1);
-plot(t, sim.wR, t, sim.wL, 'LineWidth', 1.3); grid on;
-yline(robot.wmax, 'k:'); yline(-robot.wmax, 'k:');
+plot(t, sim.omega_R, t, sim.omega_L, 'LineWidth', 1.3); grid on;
+yline(robot.omega_max, 'k:'); yline(-robot.omega_max, 'k:');
 ylabel('\omega [rad/s]'); legend('\omega_R', '\omega_L'); title('Velocita'' angolari delle ruote');
 subplot(2, 1, 2);
 yyaxis left;  plot(t, sim.v, 'LineWidth', 1.3); ylabel('v [m/s]');
-yyaxis right; plot(t, sim.w, 'LineWidth', 1.3); ylabel('\omega [rad/s]');
+yyaxis right; plot(t, sim.omega, 'LineWidth', 1.3); ylabel('\omega [rad/s]');
 grid on; xlabel('t [s]'); title('Velocita'' lineare e angolare del robot');
 
 %% 7) Animazione
